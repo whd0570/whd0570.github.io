@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>마이 웹툰 라이브러리</title>
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  
+  <style>
+    :root {
+      --bg: #0f1115;
+      --surface: #1a1d24;
+      --border: #2e323b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #818cf8;
+      --accent-hover: #6366f1;
+      --danger: #fb7185;
+      --danger-hover: #e11d48;
+      --radius: 12px;
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 5%;
+      position: sticky;
+      top: 0;
+      background: rgba(15, 17, 21, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+    }
+
+    header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px; }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    button {
+      cursor: pointer; border: none; border-radius: 8px;
+      font-weight: 600; font-family: inherit; transition: var(--transition);
+    }
+
+    .btn-add {
+      background-color: var(--accent); color: #fff; padding: 10px 18px;
+      font-size: 0.95rem; box-shadow: 0 4px 12px rgba(129, 140, 248, 0.2);
+    }
+    .btn-add:hover { background-color: var(--accent-hover); transform: translateY(-2px); }
+
+    .btn-export, .btn-link {
+      background-color: var(--surface); color: var(--text-main); 
+      border: 1px solid var(--border); padding: 10px 18px; font-size: 0.95rem;
+      text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
+      border-radius: 8px; font-weight: 600; transition: var(--transition); cursor: pointer;
+    }
+    .btn-export:hover, .btn-link:hover { background-color: rgba(255, 255, 255, 0.1); }
+
+    .btn-action { padding: 8px 12px; font-size: 0.85rem; border-radius: 6px; flex: 1; }
+    .btn-edit { background-color: rgba(255, 255, 255, 0.1); color: var(--text-main); }
+    .btn-edit:hover { background-color: rgba(255, 255, 255, 0.2); }
+    .btn-delete { background-color: rgba(251, 113, 133, 0.1); color: var(--danger); }
+    .btn-delete:hover { background-color: var(--danger); color: #fff; }
+
+    .controls-container { padding: 24px 5% 10px; max-width: 1400px; margin: 0 auto; }
+    .search-sort-wrapper { display: flex; gap: 12px; width: 100%; max-width: 500px; }
+
+    .search-bar, .sort-select {
+      padding: 12px 16px; border-radius: var(--radius);
+      border: 1px solid var(--border); background-color: var(--surface);
+      color: var(--text-main); font-size: 0.95rem; transition: var(--transition); outline: none;
+    }
+    .search-bar { flex: 1; }
+    .sort-select { flex: 0 0 110px; cursor: pointer; }
+    .search-bar:focus, .sort-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2); }
+
+    .tabs { display: flex; gap: 24px; margin-top: 24px; border-bottom: 1px solid var(--border); }
+    .tab {
+      color: var(--text-muted); font-size: 1.05rem; font-weight: 500;
+      cursor: pointer; padding-bottom: 12px; position: relative; transition: var(--transition);
+    }
+    .tab:hover { color: var(--text-main); }
+    .tab.active { color: var(--accent); font-weight: 700; }
+    .tab.active::after {
+      content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
+      height: 3px; background-color: var(--accent); border-radius: 3px 3px 0 0;
+    }
+
+    .grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 24px; padding: 24px 5% 60px; max-width: 1400px; margin: 0 auto;
+    }
+
+    .empty-state {
+      grid-column: 1 / -1; text-align: center; padding: 60px 20px;
+      color: var(--text-muted); font-size: 1.1rem;
+    }
+
+    .card {
+      background-color: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden; display: flex;
+      flex-direction: column; transition: var(--transition); height: 100%;
+    }
+    .card:hover {
+      transform: translateY(-6px); box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .card img {
+      width: 100%; height: 280px; object-fit: cover;
+      background-color: #2a2d35; border-bottom: 1px solid var(--border);
+    }
+
+    .card-info { padding: 16px; display: flex; flex-direction: column; flex-grow: 1; gap: 6px; }
+    .card-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; word-break: keep-all; }
+    
+    .card-meta { font-size: 0.85rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 2px; margin-top: auto;}
+    
+    .star-rating { color: #fbbf24; letter-spacing: 2px; font-size: 0.9rem; margin-top: 4px;}
+    .card-actions { display: flex; gap: 8px; margin-top: 16px; }
+
+    /* 팝업 모달 */
+    .modal-overlay {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px);
+      justify-content: center; align-items: center; z-index: 999;
+      opacity: 0; transition: opacity 0.3s ease;
+    }
+    .modal-overlay.active { display: flex; opacity: 1; }
+
+    .modal {
+      background-color: var(--surface); border: 1px solid var(--border);
+      padding: 32px; border-radius: 16px; width: 90%; max-width: 460px;
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5); transform: translateY(20px);
+      transition: transform 0.3s ease;
+    }
+    .modal-overlay.active .modal { transform: translateY(0); }
+    .modal h2 { margin-bottom: 24px; font-size: 1.4rem; text-align: center; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; }
+    .form-group input[type="text"], .form-group input[type="number"], .form-group input[type="url"], .form-group select {
+      width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border);
+      background-color: var(--bg); color: white; font-size: 0.95rem;
+      transition: var(--transition); outline: none;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+
+    /* 파일 업로드 인풋 스타일 */
+    .file-input-wrapper {
+      display: flex; flex-direction: column; gap: 8px;
+      background-color: var(--bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border);
+    }
+    input[type="file"] { color: var(--text-muted); font-size: 0.85rem; cursor: pointer; }
+    input[type="file"]::file-selector-button {
+      background-color: var(--surface); color: var(--text-main); border: 1px solid var(--border);
+      padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: var(--transition); margin-right: 12px;
+    }
+    input[type="file"]::file-selector-button:hover { background-color: rgba(255,255,255,0.1); }
+
+    .modal-actions { display: flex; gap: 12px; margin-top: 24px; }
+    .modal-actions button { flex: 1; padding: 12px; font-size: 1rem; }
+    .btn-submit { background-color: var(--accent); color: #fff; }
+    .btn-submit:hover { background-color: var(--accent-hover); }
+    .btn-submit:disabled { background-color: #555; cursor: not-allowed; }
+    .btn-close { background-color: transparent; border: 1px solid var(--border); color: var(--text-main); }
+    .btn-close:hover { background-color: rgba(255, 255, 255, 0.05); }
+
+    /* 사이드바 전용 CSS */
+    .sidebar-overlay {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px);
+      z-index: 1000; opacity: 0; transition: opacity 0.3s ease;
+    }
+    .sidebar-overlay.active { display: block; opacity: 1; }
+
+    .sidebar {
+      position: fixed; top: 0; right: -350px; width: 100%; max-width: 350px; height: 100vh;
+      background-color: var(--surface); border-left: 1px solid var(--border);
+      z-index: 1001; transition: right 0.3s ease; display: flex; flex-direction: column;
+      box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+    }
+    .sidebar.active { right: 0; }
+    
+    .sidebar-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 24px; border-bottom: 1px solid var(--border);
+    }
+    .sidebar-header h2 { font-size: 1.2rem; margin: 0;}
+    
+    .btn-sidebar-edit {
+      background: transparent; border: none; color: var(--text-muted); padding: 4px 8px;
+      font-size: 0.95rem; cursor: pointer; transition: var(--transition); border-radius: 4px;
+    }
+    .btn-sidebar-edit:hover { background-color: rgba(255,255,255,0.05); color: var(--text-main); }
+    
+    .sidebar-content { padding: 24px; overflow-y: auto; flex-grow: 1; }
+    
+    .platform-link {
+      display: block; padding: 16px; background-color: rgba(255,255,255,0.03);
+      border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px;
+      color: var(--text-main); text-decoration: none; font-weight: 600; transition: var(--transition);
+    }
+    .platform-link:hover {
+      background-color: rgba(255,255,255,0.08); transform: translateY(-2px); border-color: rgba(255,255,255,0.1);
+    }
+    
+    .platform-edit-item {
+      display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;
+      padding: 16px; border: 1px solid var(--border); border-radius: var(--radius); background-color: rgba(0,0,0,0.2);
+    }
+    .platform-edit-item input {
+      width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border);
+      background-color: var(--bg); color: white; font-size: 0.9rem; outline: none;
+    }
+    .platform-edit-item input:focus { border-color: var(--accent); }
+    
+    .btn-platform-remove {
+      background-color: rgba(251, 113, 133, 0.1); color: var(--danger);
+      padding: 8px; border-radius: 6px; font-size: 0.85rem; align-self: flex-end; border: none; cursor: pointer;
+    }
+    .btn-platform-remove:hover { background-color: var(--danger); color: white; }
+    
+    .btn-platform-add {
+      width: 100%; padding: 12px; background: transparent; color: var(--text-muted);
+      border: 1px dashed var(--border); border-radius: var(--radius); cursor: pointer; transition: var(--transition);
+    }
+    .btn-platform-add:hover { border-color: var(--text-main); color: var(--text-main); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>📚 마이 웹툰 라이브러리</h1>
+    <div class="header-actions">
+      <button class="btn-link" onclick="window.toggleSidebar()">웹툰 보러가기</button>
+      <button class="btn-export" onclick="window.exportToTXT()">TXT로 내보내기</button>
+      <button class="btn-add" onclick="window.openModal()">+ 새 웹툰 추가</button>
+    </div>
+  </header>
+
+  <div class="controls-container">
+    <div class="search-sort-wrapper">
+      <input type="text" class="search-bar" id="searchInput" placeholder="웹툰 제목을 검색해 보세요..." onkeyup="window.renderWebtoons()">
+      <select class="sort-select" id="sortSelect" onchange="window.changeSort(this.value)">
+        <option value="latest">최신순</option>
+        <option value="alphabetical">가나다순</option>
+      </select>
+    </div>
+    
+    <nav class="tabs">
+      <div class="tab active" onclick="window.changeTab('reading', this)">감상 중</div>
+      <div class="tab" onclick="window.changeTab('completed', this)">완독</div>
+      <div class="tab" onclick="window.changeTab('dropped', this)">보류</div>
+    </nav>
+  </div>
+
+  <main class="grid" id="webtoonGrid">
+    </main>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <h2 id="modalTitle">웹툰 기록하기</h2>
+      <form id="webtoonForm">
+        <input type="hidden" id="toonId">
+        <div class="form-group">
+          <label>제목</label>
+          <input type="text" id="title" required placeholder="웹툰 제목을 입력하세요">
+        </div>
+        
+        <div class="form-group">
+          <label>썸네일 이미지 (선택)</label>
+          <div class="file-input-wrapper">
+            <input type="file" id="imageFile" accept="image/*">
+            <span style="font-size: 0.8rem; color: var(--text-muted); text-align: center;">또는 웹 주소 입력</span>
+            <input type="url" id="image" placeholder="https://...">
+          </div>
+        </div>
+
+        <div class="form-group" style="display: flex; gap: 10px;">
+          <div style="flex: 1;">
+            <label>본편 화수 (선택)</label>
+            <input type="number" id="episode" min="0" placeholder="ex) 120">
+          </div>
+          <div style="flex: 1;">
+            <label>외전 화수 (선택)</label>
+            <input type="number" id="episodeSide" min="0" placeholder="ex) 5">
+          </div>
+          <div style="flex: 1;">
+            <label>별점 (선택)</label>
+            <input type="number" id="rating" min="1" max="5" placeholder="1~5">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>열람 상태</label>
+          <select id="status">
+            <option value="reading">감상 중</option>
+            <option value="completed">완독</option>
+            <option value="dropped">보류</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-close" onclick="window.closeModal()">취소</button>
+          <button type="button" class="btn-submit" onclick="window.saveWebtoon()">저장하기</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="window.closeSidebar()"></div>
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h2>웹툰 보러가기</h2>
+      <button class="btn-sidebar-edit" id="sidebarEditBtn" onclick="window.toggleSidebarEdit()">편집</button>
+    </div>
+    <div class="sidebar-content" id="sidebarContent">
+      </div>
+  </div>
+
+  <script type="module">
+    // 👇 Firebase Storage 모듈 추가 👇
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, setDoc, getDoc } 
+    from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } 
+    from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
+
+    // ★ 여기에 발급받은 Firebase Config 코드를 덮어써줘! ★
+    const firebaseConfig = {
+  apiKey: "AIzaSyC7s9y0lAqkjhJN7jsIjIBsHyJBpAIwOwE",
+  authDomain: "my-webtoon-lib.firebaseapp.com",
+  projectId: "my-webtoon-lib",
+  storageBucket: "my-webtoon-lib.firebasestorage.app",
+  messagingSenderId: "961716383432",
+  appId: "1:961716383432:web:52ac0a6c04d91c76e47ffd"
+};
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const storage = getStorage(app); // 스토리지 초기화
+
+    let webtoons = [];
+    let currentTab = 'reading';
+    let currentSort = 'latest'; 
+
+    async function loadWebtoons() {
+      try {
+        const q = query(collection(db, "webtoons"));
+        const querySnapshot = await getDocs(q);
+        webtoons = [];
+        querySnapshot.forEach((doc) => {
+          webtoons.push({ id: doc.id, ...doc.data() }); 
+        });
+        window.renderWebtoons();
+      } catch (error) {
+        console.error("데이터 로드 에러:", error);
+      }
+    }
+
+    window.saveWebtoon = async function() {
+      const idInput = document.getElementById('toonId').value;
+      const title = document.getElementById('title').value;
+      
+      const fileInput = document.getElementById('imageFile');
+      const file = fileInput.files[0]; // 선택된 파일
+      let finalImageUrl = document.getElementById('image').value; // URL 입력값
+
+      const episode = document.getElementById('episode').value;
+      const episodeSide = document.getElementById('episodeSide').value; 
+      const rating = document.getElementById('rating').value;
+      const status = document.getElementById('status').value;
+
+      if(!title) {
+        alert("웹툰 제목은 필수로 입력해 주세요!");
+        return;
+      }
+
+      const submitBtn = document.querySelector('.btn-submit');
+      submitBtn.disabled = true;
+
+      try {
+        // 👇 파일 업로드 로직 추가 👇
+        if (file) {
+          submitBtn.innerText = '이미지 업로드 중...';
+          const storageRef = ref(storage, `thumbnails/${Date.now()}_${file.name}`);
+          const snapshot = await uploadBytes(storageRef, file);
+          finalImageUrl = await getDownloadURL(snapshot.ref); // 업로드된 이미지의 고유 URL 반환
+        } else if (!finalImageUrl) {
+          // 파일도 없고 URL도 없으면 기본 이미지
+          finalImageUrl = 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=300&q=80';
+        }
+
+        submitBtn.innerText = '저장 중...';
+
+        const toonData = {
+          title, 
+          image: finalImageUrl, 
+          episode: episode ? parseInt(episode) : null,
+          episodeSide: episodeSide ? parseInt(episodeSide) : null, 
+          rating: rating ? parseInt(rating) : null,
+          status, 
+          updatedAt: Date.now()
+        };
+
+        if (idInput) {
+          const toonRef = doc(db, "webtoons", idInput);
+          await updateDoc(toonRef, toonData);
+        } else {
+          toonData.createdAt = Date.now();
+          await addDoc(collection(db, "webtoons"), toonData);
+        }
+        window.closeModal();
+        await loadWebtoons(); 
+      } catch (error) {
+        console.error("저장 중 오류 발생:", error);
+        alert("저장에 실패했습니다.");
+      } finally {
+        submitBtn.innerText = '저장하기';
+        submitBtn.disabled = false;
+      }
+    };
+
+    window.deleteWebtoon = async function(id) {
+      if(confirm('정말 이 웹툰 기록을 삭제하시겠습니까?')) {
+        try {
+          await deleteDoc(doc(db, "webtoons", id));
+          await loadWebtoons();
+        } catch (error) {
+          alert("삭제에 실패했습니다.");
+        }
+      }
+    };
+
+    window.changeSort = function(sortType) {
+      currentSort = sortType;
+      window.renderWebtoons();
+    };
+
+    window.copyTitle = function(title) {
+      navigator.clipboard.writeText(title).catch(err => {
+        console.error('복사 에러:', err);
+      });
+    };
+
+    window.renderWebtoons = function() {
+      const grid = document.getElementById('webtoonGrid');
+      grid.innerHTML = ''; 
+
+      const searchInput = document.getElementById('searchInput');
+      const queryText = searchInput ? searchInput.value.toLowerCase() : '';
+
+      let filtered = webtoons.filter(toon => {
+        const matchStatus = toon.status === currentTab;
+        const matchSearch = toon.title.toLowerCase().includes(queryText);
+        return matchStatus && matchSearch;
+      });
+
+      if (currentSort === 'latest') {
+        filtered.sort((a, b) => b.createdAt - a.createdAt); 
+      } else if (currentSort === 'alphabetical') {
+        filtered.sort((a, b) => a.title.localeCompare(b.title)); 
+      }
+
+      if(filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state">
+            해당하는 상태의 웹툰 기록이 없습니다.<br>
+            <span style="font-size: 0.9rem; margin-top: 8px; display: inline-block;">우측 상단의 '+ 새 웹툰 추가' 버튼을 눌러 기록을 시작해 보세요.</span>
+          </div>`;
+        return;
+      }
+
+      filtered.forEach(toon => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        
+        let episodeHtml = '';
+        if (toon.episode && toon.episodeSide) {
+          episodeHtml = `<span>최근 감상: 본편 ${toon.episode}화 / 외전 ${toon.episodeSide}화</span>`;
+        } else if (toon.episode) {
+          episodeHtml = `<span>최근 감상: 본편 ${toon.episode}화</span>`;
+        } else if (toon.episodeSide) {
+          episodeHtml = `<span>최근 감상: 외전 ${toon.episodeSide}화</span>`;
+        } else {
+          episodeHtml = `<span>감상 기록 없음</span>`;
+        }
+
+        const ratingHtml = toon.rating ? 
+          `<div class="star-rating">${'★'.repeat(toon.rating)}${'☆'.repeat(5 - toon.rating)}</div>` : 
+          `<div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">별점 미등록</div>`;
+
+        card.innerHTML = `
+          <img src="${toon.image}" alt="${toon.title} 썸네일">
+          <div class="card-info">
+            <h3 class="card-title" style="cursor: pointer;" onclick="window.copyTitle(this.getAttribute('data-title'))" data-title="${toon.title}" title="클릭해서 제목 복사">
+              ${toon.title}
+            </h3>
+            <div class="card-meta">
+              ${episodeHtml}
+            </div>
+            ${ratingHtml}
+            <div class="card-actions">
+              <button class="btn-action btn-edit" onclick="window.editWebtoon('${toon.id}')">수정</button>
+              <button class="btn-action btn-delete" onclick="window.deleteWebtoon('${toon.id}')">삭제</button>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    };
+
+    window.changeTab = function(status, element) {
+      currentTab = status;
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      if(element) element.classList.add('active');
+      window.renderWebtoons();
+    };
+
+    window.editWebtoon = function(id) {
+      const toon = webtoons.find(t => t.id === id);
+      if(!toon) return;
+
+      document.getElementById('modalTitle').innerText = '웹툰 정보 수정';
+      document.getElementById('toonId').value = toon.id;
+      document.getElementById('title').value = toon.title;
+      
+      // 파일 입력창 초기화 및 URL 세팅
+      document.getElementById('imageFile').value = '';
+      document.getElementById('image').value = toon.image.includes('unsplash') || toon.image.includes('firebase') ? '' : toon.image;
+      
+      document.getElementById('episode').value = toon.episode || '';
+      document.getElementById('episodeSide').value = toon.episodeSide || ''; 
+      document.getElementById('rating').value = toon.rating || '';
+      document.getElementById('status').value = toon.status;
+
+      document.getElementById('modalOverlay').classList.add('active');
+    };
+
+    window.openModal = function() {
+      document.getElementById('webtoonForm').reset();
+      document.getElementById('toonId').value = '';
+      document.getElementById('imageFile').value = ''; // 폼 초기화 시 파일도 초기화
+      document.getElementById('modalTitle').innerText = '새 웹툰 기록하기';
+      document.getElementById('modalOverlay').classList.add('active');
+    };
+
+    window.closeModal = function() {
+      document.getElementById('modalOverlay').classList.remove('active');
+    };
+
+    document.getElementById('modalOverlay').addEventListener('click', function(e) {
+      if (e.target === this) { window.closeModal(); }
+    });
+
+    window.exportToTXT = function() {
+      if (webtoons.length === 0) {
+        alert("내보낼 웹툰 기록이 없습니다.");
+        return;
+      }
+
+      let content = "마이 웹툰 라이브러리 목록\n==============================\n\n";
+      
+      webtoons.forEach(toon => {
+        let statusText = toon.status === 'reading' ? '감상 중' : (toon.status === 'completed' ? '완독' : '보류');
+        
+        let epText = '';
+        if (toon.episode && toon.episodeSide) epText = `본편 ${toon.episode}화, 외전 ${toon.episodeSide}화 감상`;
+        else if (toon.episode) epText = `본편 ${toon.episode}화 감상`;
+        else if (toon.episodeSide) epText = `외전 ${toon.episodeSide}화 감상`;
+        else epText = '화수 미기록';
+
+        let rateText = toon.rating ? `별점: ${toon.rating}점` : '별점 미기록';
+        
+        content += `- [${statusText}] ${toon.title} (${epText} / ${rateText})\n`;
+      });
+
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'my_webtoon_list.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    };
+
+    // 사이드바 로직 (Firebase 연동 유지)
+    let platformLinks = [];
+    let isSidebarEditMode = false;
+
+    async function loadPlatforms() {
+      try {
+        const docRef = doc(db, "settings", "platforms");
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          platformLinks = docSnap.data().links;
+        } else {
+          platformLinks = [
+            { name: '네이버 웹툰', url: 'https://comic.naver.com/' },
+            { name: '카카오페이지', url: 'https://page.kakao.com/' },
+            { name: '리디북스', url: 'https://ridibooks.com/' }
+          ];
+        }
+      } catch (error) {
+        console.error("플랫폼 로드 에러:", error);
+      }
+    }
+
+    window.toggleSidebar = function() {
+      document.getElementById('sidebar').classList.toggle('active');
+      document.getElementById('sidebarOverlay').classList.toggle('active');
+      if (!document.getElementById('sidebar').classList.contains('active')) {
+        isSidebarEditMode = false; 
+      }
+      window.renderSidebar();
+    };
+
+    window.closeSidebar = function() {
+      document.getElementById('sidebar').classList.remove('active');
+      document.getElementById('sidebarOverlay').classList.remove('active');
+      isSidebarEditMode = false;
+    };
+
+    window.toggleSidebarEdit = async function() {
+      if (isSidebarEditMode) {
+        const items = document.querySelectorAll('.platform-edit-item');
+        platformLinks = [];
+        items.forEach(item => {
+          const name = item.querySelector('.plat-name').value.trim();
+          const url = item.querySelector('.plat-url').value.trim();
+          if (name && url) {
+            platformLinks.push({ name, url });
+          }
+        });
+        
+        try {
+          const editBtn = document.getElementById('sidebarEditBtn');
+          editBtn.innerText = '저장 중...';
+          await setDoc(doc(db, "settings", "platforms"), { links: platformLinks });
+        } catch (error) {
+          console.error("플랫폼 저장 에러:", error);
+          alert("플랫폼 목록 저장에 실패했습니다.");
+        }
+      }
+      isSidebarEditMode = !isSidebarEditMode;
+      window.renderSidebar();
+    };
+
+    window.addPlatformField = function() {
+      platformLinks.push({ name: '', url: '' });
+      window.renderSidebar();
+    };
+
+    window.removePlatformField = function(index) {
+      platformLinks.splice(index, 1);
+      window.renderSidebar();
+    };
+
+    window.renderSidebar = function() {
+      const content = document.getElementById('sidebarContent');
+      const editBtn = document.getElementById('sidebarEditBtn');
+
+      if (isSidebarEditMode) {
+        editBtn.innerText = '저장';
+        editBtn.style.color = 'var(--accent)';
+        editBtn.style.fontWeight = 'bold';
+        
+        let html = '';
+        platformLinks.forEach((p, idx) => {
+          html += `
+            <div class="platform-edit-item">
+              <input type="text" class="plat-name" value="${p.name}" placeholder="플랫폼 이름 (예: 네이버 웹툰)">
+              <input type="url" class="plat-url" value="${p.url}" placeholder="URL 주소 (https://...)">
+              <button class="btn-platform-remove" onclick="window.removePlatformField(${idx})">삭제</button>
+            </div>
+          `;
+        });
+        html += `<button class="btn-platform-add" onclick="window.addPlatformField()">+ 링크 추가</button>`;
+        content.innerHTML = html;
+      } else {
+        editBtn.innerText = '편집';
+        editBtn.style.color = 'var(--text-muted)';
+        editBtn.style.fontWeight = 'normal';
+        
+        let html = '';
+        if (platformLinks.length === 0) {
+          html = `<p style="color:var(--text-muted); font-size:0.95rem; text-align:center; margin-top:20px;">등록된 플랫폼이 없습니다.<br>우측 상단의 편집을 눌러 추가해 보세요.</p>`;
+        } else {
+          platformLinks.forEach(p => {
+            html += `<a href="${p.url}" target="_blank" class="platform-link">${p.name}</a>`;
+          });
+        }
+        content.innerHTML = html;
+      }
+    };
+
+    loadWebtoons();
+    loadPlatforms();
+
+  </script>
+</body>
+</html>
