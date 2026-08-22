@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>마이 웹툰 라이브러리</title>
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  
+  <style>
+    :root {
+      --bg: #0f1115;
+      --surface: #1a1d24;
+      --border: #2e323b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #818cf8;
+      --accent-hover: #6366f1;
+      --danger: #fb7185;
+      --danger-hover: #e11d48;
+      --radius: 12px;
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 5%;
+      position: sticky;
+      top: 0;
+      background: rgba(15, 17, 21, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+    }
+
+    header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.5px; }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    button {
+      cursor: pointer; border: none; border-radius: 8px;
+      font-weight: 600; font-family: inherit; transition: var(--transition);
+    }
+
+    .btn-add {
+      background-color: var(--accent); color: #fff; padding: 10px 18px;
+      font-size: 0.95rem; box-shadow: 0 4px 12px rgba(129, 140, 248, 0.2);
+    }
+    .btn-add:hover { background-color: var(--accent-hover); transform: translateY(-2px); }
+
+    .btn-export, .btn-link {
+      background-color: var(--surface); color: var(--text-main); 
+      border: 1px solid var(--border); padding: 10px 18px; font-size: 0.95rem;
+      text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
+      border-radius: 8px; font-weight: 600; transition: var(--transition); cursor: pointer;
+    }
+    .btn-export:hover, .btn-link:hover { background-color: rgba(255, 255, 255, 0.1); }
+
+    .btn-action { padding: 8px 12px; font-size: 0.85rem; border-radius: 6px; flex: 1; }
+    .btn-edit { background-color: rgba(255, 255, 255, 0.1); color: var(--text-main); }
+    .btn-edit:hover { background-color: rgba(255, 255, 255, 0.2); }
+    .btn-delete { background-color: rgba(251, 113, 133, 0.1); color: var(--danger); }
+    .btn-delete:hover { background-color: var(--danger); color: #fff; }
+
+    .controls-container { padding: 24px 5% 10px; max-width: 1400px; margin: 0 auto; }
+    .search-sort-wrapper { display: flex; gap: 12px; width: 100%; max-width: 500px; }
+
+    .search-bar, .sort-select {
+      padding: 12px 16px; border-radius: var(--radius);
+      border: 1px solid var(--border); background-color: var(--surface);
+      color: var(--text-main); font-size: 0.95rem; transition: var(--transition); outline: none;
+    }
+    .search-bar { flex: 1; }
+    .sort-select { flex: 0 0 110px; cursor: pointer; }
+    .search-bar:focus, .sort-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2); }
+
+    .tabs { display: flex; gap: 24px; margin-top: 24px; border-bottom: 1px solid var(--border); }
+    .tab {
+      color: var(--text-muted); font-size: 1.05rem; font-weight: 500;
+      cursor: pointer; padding-bottom: 12px; position: relative; transition: var(--transition);
+    }
+    .tab:hover { color: var(--text-main); }
+    .tab.active { color: var(--accent); font-weight: 700; }
+    .tab.active::after {
+      content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
+      height: 3px; background-color: var(--accent); border-radius: 3px 3px 0 0;
+    }
+
+    .grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 24px; padding: 24px 5% 60px; max-width: 1400px; margin: 0 auto;
+    }
+
+    .empty-state {
+      grid-column: 1 / -1; text-align: center; padding: 60px 20px;
+      color: var(--text-muted); font-size: 1.1rem;
+    }
+
+    .card {
+      background-color: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden; display: flex;
+      flex-direction: column; transition: var(--transition); height: 100%;
+    }
+    .card:hover {
+      transform: translateY(-6px); box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .card img {
+      width: 100%; height: 280px; object-fit: cover;
+      background-color: #2a2d35; border-bottom: 1px solid var(--border);
+    }
+
+    .card-info { padding: 16px; display: flex; flex-direction: column; flex-grow: 1; gap: 6px; }
+    .card-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; word-break: keep-all; }
+    
+    .card-meta { font-size: 0.85rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 2px; margin-top: auto;}
+    
+    .star-rating { color: #fbbf24; letter-spacing: 2px; font-size: 0.9rem; margin-top: 4px;}
+    .card-actions { display: flex; gap: 8px; margin-top: 16px; }
+
+    /* 팝업 모달 */
+    .modal-overlay {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px);
+      justify-content: center; align-items: center; z-index: 999;
+      opacity: 0; transition: opacity 0.3s ease;
+    }
+    .modal-overlay.active { display: flex; opacity: 1; }
+
+    .modal {
+      background-color: var(--surface); border: 1px solid var(--border);
+      padding: 32px; border-radius: 16px; width: 90%; max-width: 460px;
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5); transform: translateY(20px);
+      transition: transform 0.3s ease;
+    }
+    .modal-overlay.active .modal { transform: translateY(0); }
+    .modal h2 { margin-bottom: 24px; font-size: 1.4rem; text-align: center; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; }
+    .form-group input[type="text"], .form-group input[type="number"], .form-group input[type="url"], .form-group select {
+      width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border);
+      background-color: var(--bg); color: white; font-size: 0.95rem;
+      transition: var(--transition); outline: none;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+
+    .file-input-wrapper {
+      display: flex; flex-direction: column; gap: 8px;
+      background-color: var(--bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border);
+    }
+    input[type="file"] { color: var(--text-muted); font-size: 0.85rem; cursor: pointer; }
+    input[type="file"]::file-selector-button {
+      background-color: var(--surface); color: var(--text-main); border: 1px solid var(--border);
+      padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: var(--transition); margin-right: 12px;
+    }
+    input[type="file"]::file-selector-button:hover { background-color: rgba(255,255,255,0.1); }
+
+    .modal-actions { display: flex; gap: 12px; margin-top: 24px; }
+    .modal-actions button { flex: 1; padding: 12px; font-size: 1rem; }
+    .btn-submit { background-color: var(--accent); color: #fff; }
+    .btn-submit:hover { background-color: var(--accent-hover); }
+    .btn-submit:disabled { background-color: #555; cursor: not-allowed; }
+    .btn-close { background-color: transparent; border: 1px solid var(--border); color: var(--text-main); }
+    .btn-close:hover { background-color: rgba(255, 255, 255, 0.05); }
+
+    /* 사이드바 전용 CSS */
+    .sidebar-overlay {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px);
+      z-index: 1000; opacity: 0; transition: opacity 0.3s ease;
+    }
+    .sidebar-overlay.active { display: block; opacity: 1; }
+
+    .sidebar {
+      position: fixed; top: 0; right: -350px; width: 100%; max-width: 350px; height: 100vh;
+      background-color: var(--surface); border-left: 1px solid var(--border);
+      z-index: 1001; transition: right 0.3s ease; display: flex; flex-direction: column;
+      box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+    }
+    .sidebar.active { right: 0; }
+    
+    .sidebar-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 24px; border-bottom: 1px solid var(--border);
+    }
+    .sidebar-header h2 { font-size: 1.2rem; margin: 0;}
+    
+    .btn-sidebar-edit {
+      background: transparent; border: none; color: var(--text-muted); padding: 4px 8px;
+      font-size: 0.95rem; cursor: pointer; transition: var(--transition); border-radius: 4px;
+    }
+    .btn-sidebar-edit:hover { background-color: rgba(255,255,255,0.05); color: var(--text-main); }
+    
+    .sidebar-content { padding: 24px; overflow-y: auto; flex-grow: 1; }
+    
+    .platform-link {
+      display: block; padding: 16px; background-color: rgba(255,255,255,0.03);
+      border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px;
+      color: var(--text-main); text-decoration: none; font-weight: 600; transition: var(--transition);
+    }
+    .platform-link:hover {
+      background-color: rgba(255,255,255,0.08); transform: translateY(-2px); border-color: rgba(255,255,255,0.1);
+    }
+    
+    .platform-edit-item {
+      display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;
+      padding: 16px; border: 1px solid var(--border); border-radius: var(--radius); background-color: rgba(0,0,0,0.2);
+    }
+    .platform-edit-item input {
+      width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border);
+      background-color: var(--bg); color: white; font-size: 0.9rem; outline: none;
+    }
+    .platform-edit-item input:focus { border-color: var(--accent); }
+    
+    .btn-platform-remove {
+      background-color: rgba(251, 113, 133, 0.1); color: var(--danger);
+      padding: 8px; border-radius: 6px; font-size: 0.85rem; align-self: flex-end; border: none; cursor: pointer;
+    }
+    .btn-platform-remove:hover { background-color: var(--danger); color: white; }
+    
+    .btn-platform-add {
+      width: 100%; padding: 12px; background: transparent; color: var(--text-muted);
+      border: 1px dashed var(--border); border-radius: var(--radius); cursor: pointer; transition: var(--transition);
+    }
+    .btn-platform-add:hover { border-color: var(--text-main); color: var(--text-main); }
+
+    /* 인증 UI */
+    .auth-overlay {
+      display: flex; position: fixed; inset: 0; z-index: 3000;
+      align-items: center; justify-content: center; padding: 24px;
+      background: rgba(15, 17, 21, 0.94); backdrop-filter: blur(10px);
+    }
+    .auth-overlay.hidden { display: none; }
+    .auth-card {
+      width: min(420px, 100%); padding: 32px; border-radius: 16px;
+      background: var(--surface); border: 1px solid var(--border);
+      box-shadow: 0 24px 60px rgba(0,0,0,0.45); text-align: center;
+    }
+    .auth-card h2 { font-size: 1.35rem; margin-bottom: 10px; }
+    .auth-card p { color: var(--text-muted); font-size: 0.92rem; margin-bottom: 22px; }
+    .btn-login {
+      width: 100%; padding: 12px 16px; font-size: 0.95rem;
+      background: var(--accent); color: #fff;
+    }
+    .btn-login:hover { background: var(--accent-hover); }
+    .auth-user {
+      display: none; align-items: center; gap: 8px; color: var(--text-muted);
+      font-size: 0.82rem; max-width: 220px;
+    }
+    .auth-user.visible { display: inline-flex; }
+    .auth-user span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .btn-logout {
+      display: none; background-color: var(--surface); color: var(--text-main);
+      border: 1px solid var(--border); padding: 10px 14px; font-size: 0.9rem;
+    }
+    .btn-logout.visible { display: inline-block; }
+    .btn-logout:hover { background-color: rgba(255, 255, 255, 0.1); }
+
+    .checkbox-row {
+      display: none; align-items: center; gap: 8px; padding-top: 8px;
+      color: var(--text-muted); font-size: 0.85rem;
+    }
+    .checkbox-row.visible { display: flex; }
+    .checkbox-row input { accent-color: var(--accent); }
+
+    @media (max-width: 760px) {
+      header { align-items: flex-start; gap: 14px; }
+      .header-actions { flex-wrap: wrap; justify-content: flex-end; }
+      .auth-user { max-width: 150px; }
+    }
+
+    @media (max-width: 560px) {
+      header { flex-direction: column; }
+      .header-actions { width: 100%; justify-content: flex-start; }
+      .header-actions > * { flex: 1 1 auto; }
+      .search-sort-wrapper { flex-direction: column; max-width: none; }
+      .sort-select { flex-basis: auto; width: 100%; }
+      .tabs { gap: 18px; overflow-x: auto; }
+      .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 16px; }
+      .card img { height: 240px; }
+      .modal { padding: 22px; }
+      .form-group[style*="display: flex"] { flex-direction: column; }
+    }
+
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>📚 마이 웹툰 라이브러리</h1>
+    <div class="header-actions">
+      <div class="auth-user" id="authUser"><span id="authUserEmail"></span></div>
+      <button class="btn-link" onclick="window.toggleSidebar()">웹툰 보러가기</button>
+      <button class="btn-export" onclick="window.exportToTXT()">TXT로 내보내기</button>
+      <button class="btn-add" onclick="window.openModal()">+ 새 웹툰 추가</button>
+      <button class="btn-logout" id="logoutBtn" onclick="window.logout()">로그아웃</button>
+    </div>
+  </header>
+
+  <div class="controls-container">
+    <div class="search-sort-wrapper">
+      <input type="text" class="search-bar" id="searchInput" placeholder="웹툰 제목을 검색해 보세요..." onkeyup="window.renderWebtoons()">
+      <select class="sort-select" id="sortSelect" onchange="window.changeSort(this.value)">
+        <option value="latest">최신순</option>
+        <option value="alphabetical">가나다순</option>
+      </select>
+    </div>
+    
+    <nav class="tabs">
+      <div class="tab active" onclick="window.changeTab('reading', this)">감상 중</div>
+      <div class="tab" onclick="window.changeTab('completed', this)">완독</div>
+      <div class="tab" onclick="window.changeTab('dropped', this)">보류</div>
+    </nav>
+  </div>
+
+  <main class="grid" id="webtoonGrid">
+    </main>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <h2 id="modalTitle">웹툰 기록하기</h2>
+      <form id="webtoonForm">
+        <input type="hidden" id="toonId">
+        <div class="form-group">
+          <label>제목</label>
+          <input type="text" id="title" required placeholder="웹툰 제목을 입력하세요">
+        </div>
+        
+        <div class="form-group">
+          <label>썸네일 이미지 (선택)</label>
+          <div class="file-input-wrapper">
+            <input type="file" id="imageFile" accept="image/*">
+            <span style="font-size: 0.8rem; color: var(--text-muted); text-align: center;">또는 웹 주소 입력</span>
+            <input type="url" id="image" placeholder="https://...">
+            <label class="checkbox-row" id="imageDeleteGroup">
+              <input type="checkbox" id="removeImage">
+              기존 썸네일을 삭제하고 기본 이미지 사용
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group" style="display: flex; gap: 10px;">
+          <div style="flex: 1;">
+            <label>본편 화수 (선택)</label>
+            <input type="number" id="episode" min="0" placeholder="ex) 120">
+          </div>
+          <div style="flex: 1;">
+            <label>외전 화수 (선택)</label>
+            <input type="number" id="episodeSide" min="0" placeholder="ex) 5">
+          </div>
+          <div style="flex: 1;">
+            <label>별점 (선택)</label>
+            <input type="number" id="rating" min="1" max="5" placeholder="1~5">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>열람 상태</label>
+          <select id="status">
+            <option value="reading">감상 중</option>
+            <option value="completed">완독</option>
+            <option value="dropped">보류</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-close" onclick="window.closeModal()">취소</button>
+          <button type="button" class="btn-submit" onclick="window.saveWebtoon()">저장하기</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="window.closeSidebar()"></div>
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h2>웹툰 보러가기</h2>
+      <button class="btn-sidebar-edit" id="sidebarEditBtn" onclick="window.toggleSidebarEdit()">편집</button>
+    </div>
+    <div class="sidebar-content" id="sidebarContent">
+      </div>
+  </div>
+
+  <div class="auth-overlay" id="authOverlay">
+    <div class="auth-card">
+      <h2>마이 웹툰 라이브러리</h2>
+      <p>등록된 본인 Google 계정으로 로그인해야 기록을 열 수 있습니다.</p>
+      <button class="btn-login" id="loginBtn" onclick="window.loginWithGoogle()">Google 계정으로 로그인</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import {
+      getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc,
+      query, setDoc, getDoc
+    } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import {
+      getStorage, ref, uploadBytes, getDownloadURL, deleteObject
+    } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-storage.js";
+    import {
+      getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut
+    } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC7s9y0lAqkjhJN7jsIjIBsHyJBpAIwOwE",
+      authDomain: "my-webtoon-lib.firebaseapp.com",
+      projectId: "my-webtoon-lib",
+      storageBucket: "my-webtoon-lib.firebasestorage.app",
+      messagingSenderId: "961716383432",
+      appId: "1:961716383432:web:52ac0a6c04d91c76e47ffd"
+    };
+
+    const DEFAULT_IMAGE_URL =
+      'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=300&q=80';
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    let webtoons = [];
+    let currentTab = 'reading';
+    let currentSort = 'latest';
+    let platformLinks = [];
+    let isSidebarEditMode = false;
+    let currentUser = null;
+
+    function isHttpUrl(value) {
+      if (!value) return false;
+      try {
+        const parsed = new URL(value);
+        return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+      } catch {
+        return false;
+      }
+    }
+
+    function parseOptionalNonNegativeInt(raw, label) {
+      const value = String(raw ?? '').trim();
+      if (value === '') return null;
+      const number = Number(value);
+      if (!Number.isInteger(number) || number < 0) {
+        throw new Error(`${label}은(는) 0 이상의 정수로 입력해 주세요.`);
+      }
+      return number;
+    }
+
+    function parseOptionalRating(raw) {
+      const value = String(raw ?? '').trim();
+      if (value === '') return null;
+      const number = Number(value);
+      if (!Number.isInteger(number) || number < 1 || number > 5) {
+        throw new Error('별점은 1~5 사이의 정수로 입력해 주세요.');
+      }
+      return number;
+    }
+
+    function getOwnedStorageRef(toon) {
+      try {
+        if (toon?.imagePath) {
+          const storageRef = ref(storage, toon.imagePath);
+          return storageRef.fullPath.startsWith('thumbnails/') ? storageRef : null;
+        }
+
+        if (toon?.image && toon.image.includes('firebasestorage')) {
+          const storageRef = ref(storage, toon.image);
+          return storageRef.fullPath.startsWith('thumbnails/') ? storageRef : null;
+        }
+      } catch (error) {
+        console.warn('기존 Storage 이미지 경로를 확인하지 못했습니다:', error);
+      }
+      return null;
+    }
+
+    async function deleteStoredThumbnail(toon) {
+      const storageRef = getOwnedStorageRef(toon);
+      if (!storageRef) return;
+
+      try {
+        await deleteObject(storageRef);
+      } catch (error) {
+        if (error?.code !== 'storage/object-not-found') {
+          console.warn('Storage 이미지 삭제 실패:', error);
+        }
+      }
+    }
+
+    function setAuthenticatedUi(user) {
+      const overlay = document.getElementById('authOverlay');
+      const authUser = document.getElementById('authUser');
+      const authUserEmail = document.getElementById('authUserEmail');
+      const logoutBtn = document.getElementById('logoutBtn');
+
+      if (user) {
+        overlay.classList.add('hidden');
+        authUserEmail.textContent = user.email || '로그인됨';
+        authUser.classList.add('visible');
+        logoutBtn.classList.add('visible');
+      } else {
+        overlay.classList.remove('hidden');
+        authUserEmail.textContent = '';
+        authUser.classList.remove('visible');
+        logoutBtn.classList.remove('visible');
+      }
+    }
+
+    async function verifyAccess() {
+      try {
+        await getDoc(doc(db, "settings", "platforms"));
+        return true;
+      } catch (error) {
+        if (error?.code === 'permission-denied') {
+          alert('이 Google 계정에는 이 웹툰 라이브러리의 접근 권한이 없습니다.');
+          await signOut(auth);
+          return false;
+        }
+        throw error;
+      }
+    }
+
+    window.loginWithGoogle = async function() {
+      const loginBtn = document.getElementById('loginBtn');
+      loginBtn.disabled = true;
+      loginBtn.textContent = '로그인 중...';
+
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (error) {
+        console.error('Google 로그인 실패:', error);
+        if (error?.code !== 'auth/popup-closed-by-user') {
+          alert('Google 로그인에 실패했습니다.');
+        }
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Google 계정으로 로그인';
+      }
+    };
+
+    window.logout = async function() {
+      try {
+        await signOut(auth);
+      } catch (error) {
+        console.error('로그아웃 실패:', error);
+      }
+    };
+
+    onAuthStateChanged(auth, async (user) => {
+      currentUser = user;
+      setAuthenticatedUi(user);
+
+      if (!user) {
+        webtoons = [];
+        platformLinks = [];
+        window.renderWebtoons();
+        window.renderSidebar();
+        return;
+      }
+
+      try {
+        const allowed = await verifyAccess();
+        if (!allowed) return;
+        await Promise.all([loadWebtoons(), loadPlatforms()]);
+      } catch (error) {
+        console.error('초기 데이터 로드 실패:', error);
+        alert('데이터를 불러오지 못했습니다.');
+      }
+    });
+
+    async function loadWebtoons() {
+      if (!currentUser) return;
+
+      try {
+        const q = query(collection(db, "webtoons"));
+        const querySnapshot = await getDocs(q);
+        webtoons = [];
+        querySnapshot.forEach((snapshot) => {
+          const data = snapshot.data() || {};
+          if (typeof data.title !== 'string') return;
+
+          webtoons.push({
+            id: snapshot.id,
+            title: data.title,
+            image: typeof data.image === 'string' && data.image ? data.image : DEFAULT_IMAGE_URL,
+            imagePath: typeof data.imagePath === 'string' ? data.imagePath : null,
+            episode: Number.isInteger(data.episode) && data.episode >= 0 ? data.episode : null,
+            episodeSide: Number.isInteger(data.episodeSide) && data.episodeSide >= 0 ? data.episodeSide : null,
+            rating: Number.isInteger(data.rating) && data.rating >= 1 && data.rating <= 5 ? data.rating : null,
+            status: ['reading', 'completed', 'dropped'].includes(data.status) ? data.status : 'reading',
+            createdAt: typeof data.createdAt === 'number' ? data.createdAt : 0,
+            updatedAt: typeof data.updatedAt === 'number'
+              ? data.updatedAt
+              : (typeof data.createdAt === 'number' ? data.createdAt : 0)
+          });
+        });
+        window.renderWebtoons();
+      } catch (error) {
+        console.error("데이터 로드 에러:", error);
+        throw error;
+      }
+    }
+
+    window.saveWebtoon = async function() {
+      if (!currentUser) {
+        alert('로그인이 필요합니다.');
+        return;
+      }
+
+      const idInput = document.getElementById('toonId').value;
+      const title = document.getElementById('title').value.trim();
+      const fileInput = document.getElementById('imageFile');
+      const file = fileInput.files[0] || null;
+      const imageUrlInput = document.getElementById('image').value.trim();
+      const removeImage = document.getElementById('removeImage').checked;
+      const status = document.getElementById('status').value;
+
+      if (!title) {
+        alert("웹툰 제목은 필수로 입력해 주세요!");
+        return;
+      }
+
+      if (imageUrlInput && !isHttpUrl(imageUrlInput)) {
+        alert('이미지 웹 주소는 http:// 또는 https:// 주소만 사용할 수 있습니다.');
+        return;
+      }
+
+      let episode;
+      let episodeSide;
+      let rating;
+
+      try {
+        episode = parseOptionalNonNegativeInt(document.getElementById('episode').value, '본편 화수');
+        episodeSide = parseOptionalNonNegativeInt(document.getElementById('episodeSide').value, '외전 화수');
+        rating = parseOptionalRating(document.getElementById('rating').value);
+      } catch (error) {
+        alert(error.message);
+        return;
+      }
+
+      if (!['reading', 'completed', 'dropped'].includes(status)) {
+        alert('올바른 열람 상태를 선택해 주세요.');
+        return;
+      }
+
+      const submitBtn = document.querySelector('.btn-submit');
+      submitBtn.disabled = true;
+
+      let uploadedRef = null;
+      let savedToFirestore = false;
+      let shouldDeletePreviousImage = false;
+      const existingToon = idInput ? webtoons.find(t => t.id === idInput) : null;
+
+      try {
+        let finalImageUrl = existingToon?.image || DEFAULT_IMAGE_URL;
+        let finalImagePath = existingToon?.imagePath || null;
+
+        if (file) {
+          if (!file.type.startsWith('image/')) {
+            throw new Error('이미지 파일만 업로드할 수 있습니다.');
+          }
+          if (file.size > 10 * 1024 * 1024) {
+            throw new Error('썸네일 이미지는 10MB 이하만 업로드할 수 있습니다.');
+          }
+
+          submitBtn.textContent = '이미지 업로드 중...';
+          const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+          const uniqueId = window.crypto?.randomUUID?.() || `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+          uploadedRef = ref(storage, `thumbnails/${uniqueId}_${safeName}`);
+          const snapshot = await uploadBytes(uploadedRef, file, { contentType: file.type });
+          finalImageUrl = await getDownloadURL(snapshot.ref);
+          finalImagePath = snapshot.ref.fullPath;
+          shouldDeletePreviousImage = Boolean(existingToon);
+        } else if (removeImage) {
+          finalImageUrl = DEFAULT_IMAGE_URL;
+          finalImagePath = null;
+          shouldDeletePreviousImage = Boolean(existingToon);
+        } else if (imageUrlInput) {
+          finalImageUrl = imageUrlInput;
+          finalImagePath = null;
+          shouldDeletePreviousImage =
+            Boolean(existingToon) &&
+            (imageUrlInput !== existingToon.image || Boolean(existingToon.imagePath));
+        } else if (!existingToon) {
+          finalImageUrl = DEFAULT_IMAGE_URL;
+          finalImagePath = null;
+        }
+
+        submitBtn.textContent = '저장 중...';
+
+        const now = Date.now();
+        const toonData = {
+          title,
+          image: finalImageUrl,
+          imagePath: finalImagePath,
+          episode,
+          episodeSide,
+          rating,
+          status,
+          updatedAt: now
+        };
+
+        if (idInput) {
+          await updateDoc(doc(db, "webtoons", idInput), toonData);
+        } else {
+          toonData.createdAt = now;
+          await addDoc(collection(db, "webtoons"), toonData);
+        }
+        savedToFirestore = true;
+
+        if (shouldDeletePreviousImage && existingToon) {
+          const oldRef = getOwnedStorageRef(existingToon);
+          if (!uploadedRef || !oldRef || oldRef.fullPath !== uploadedRef.fullPath) {
+            await deleteStoredThumbnail(existingToon);
+          }
+        }
+
+        window.closeModal();
+        await loadWebtoons();
+      } catch (error) {
+        console.error("저장 중 오류 발생:", error);
+
+        if (uploadedRef && !savedToFirestore) {
+          try {
+            await deleteObject(uploadedRef);
+          } catch (cleanupError) {
+            if (cleanupError?.code !== 'storage/object-not-found') {
+              console.warn('업로드 롤백 중 이미지 삭제 실패:', cleanupError);
+            }
+          }
+        }
+
+        alert(error?.message || "저장에 실패했습니다.");
+      } finally {
+        submitBtn.textContent = '저장하기';
+        submitBtn.disabled = false;
+      }
+    };
+
+    window.deleteWebtoon = async function(id) {
+      if (!currentUser) return;
+      if (!confirm('정말 이 웹툰 기록을 삭제하시겠습니까?')) return;
+
+      const toon = webtoons.find(t => t.id === id);
+
+      try {
+        await deleteDoc(doc(db, "webtoons", id));
+        if (toon) {
+          await deleteStoredThumbnail(toon);
+        }
+        await loadWebtoons();
+      } catch (error) {
+        console.error('삭제 실패:', error);
+        alert("삭제에 실패했습니다.");
+      }
+    };
+
+    window.changeSort = function(sortType) {
+      currentSort = sortType;
+      window.renderWebtoons();
+    };
+
+    window.copyTitle = async function(title) {
+      try {
+        await navigator.clipboard.writeText(title);
+      } catch (error) {
+        console.error('복사 에러:', error);
+      }
+    };
+
+    function createEpisodeText(toon) {
+      if (toon.episode !== null && toon.episodeSide !== null) {
+        return `최근 감상: 본편 ${toon.episode}화 / 외전 ${toon.episodeSide}화`;
+      }
+      if (toon.episode !== null) {
+        return `최근 감상: 본편 ${toon.episode}화`;
+      }
+      if (toon.episodeSide !== null) {
+        return `최근 감상: 외전 ${toon.episodeSide}화`;
+      }
+      return '감상 기록 없음';
+    }
+
+    window.renderWebtoons = function() {
+      const grid = document.getElementById('webtoonGrid');
+      grid.replaceChildren();
+
+      const searchInput = document.getElementById('searchInput');
+      const queryText = searchInput ? searchInput.value.trim().toLocaleLowerCase('ko-KR') : '';
+
+      let filtered = webtoons.filter(toon => {
+        const matchStatus = toon.status === currentTab;
+        const matchSearch = toon.title.toLocaleLowerCase('ko-KR').includes(queryText);
+        return matchStatus && matchSearch;
+      });
+
+      if (currentSort === 'latest') {
+        filtered.sort((a, b) =>
+          (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0)
+        );
+      } else if (currentSort === 'alphabetical') {
+        filtered.sort((a, b) => a.title.localeCompare(b.title, 'ko-KR'));
+      }
+
+      if (filtered.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'empty-state';
+
+        if (!currentUser) {
+          empty.textContent = '로그인하면 웹툰 기록이 표시됩니다.';
+        } else {
+          empty.append('해당하는 상태의 웹툰 기록이 없습니다.');
+          empty.appendChild(document.createElement('br'));
+          const sub = document.createElement('span');
+          sub.style.fontSize = '0.9rem';
+          sub.style.marginTop = '8px';
+          sub.style.display = 'inline-block';
+          sub.textContent = "우측 상단의 '+ 새 웹툰 추가' 버튼을 눌러 기록을 시작해 보세요.";
+          empty.appendChild(sub);
+        }
+
+        grid.appendChild(empty);
+        return;
+      }
+
+      filtered.forEach(toon => {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const image = document.createElement('img');
+        image.src = isHttpUrl(toon.image) ? toon.image : DEFAULT_IMAGE_URL;
+        image.alt = `${toon.title} 썸네일`;
+        image.loading = 'lazy';
+        image.addEventListener('error', () => {
+          if (image.src !== DEFAULT_IMAGE_URL) image.src = DEFAULT_IMAGE_URL;
+        });
+
+        const info = document.createElement('div');
+        info.className = 'card-info';
+
+        const title = document.createElement('h3');
+        title.className = 'card-title';
+        title.style.cursor = 'pointer';
+        title.title = '클릭해서 제목 복사';
+        title.textContent = toon.title;
+        title.addEventListener('click', () => window.copyTitle(toon.title));
+
+        const meta = document.createElement('div');
+        meta.className = 'card-meta';
+        const episode = document.createElement('span');
+        episode.textContent = createEpisodeText(toon);
+        meta.appendChild(episode);
+
+        const rating = document.createElement('div');
+        if (toon.rating !== null) {
+          rating.className = 'star-rating';
+          rating.textContent = `${'★'.repeat(toon.rating)}${'☆'.repeat(5 - toon.rating)}`;
+        } else {
+          rating.style.fontSize = '0.85rem';
+          rating.style.color = 'var(--text-muted)';
+          rating.style.marginTop = '4px';
+          rating.textContent = '별점 미등록';
+        }
+
+        const actions = document.createElement('div');
+        actions.className = 'card-actions';
+
+        const editButton = document.createElement('button');
+        editButton.className = 'btn-action btn-edit';
+        editButton.type = 'button';
+        editButton.textContent = '수정';
+        editButton.addEventListener('click', () => window.editWebtoon(toon.id));
+
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'btn-action btn-delete';
+        deleteButton.type = 'button';
+        deleteButton.textContent = '삭제';
+        deleteButton.addEventListener('click', () => window.deleteWebtoon(toon.id));
+
+        actions.append(editButton, deleteButton);
+        info.append(title, meta, rating, actions);
+        card.append(image, info);
+        grid.appendChild(card);
+      });
+    };
+
+    window.changeTab = function(status, element) {
+      currentTab = status;
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      if (element) element.classList.add('active');
+      window.renderWebtoons();
+    };
+
+    window.editWebtoon = function(id) {
+      const toon = webtoons.find(t => t.id === id);
+      if (!toon) return;
+
+      document.getElementById('modalTitle').textContent = '웹툰 정보 수정';
+      document.getElementById('toonId').value = toon.id;
+      document.getElementById('title').value = toon.title;
+      document.getElementById('imageFile').value = '';
+
+      const isManagedImage = Boolean(toon.imagePath) || toon.image.includes('firebasestorage');
+      const isDefaultImage = toon.image === DEFAULT_IMAGE_URL || toon.image.includes('unsplash');
+      document.getElementById('image').value = (isManagedImage || isDefaultImage) ? '' : toon.image;
+
+      document.getElementById('episode').value = toon.episode ?? '';
+      document.getElementById('episodeSide').value = toon.episodeSide ?? '';
+      document.getElementById('rating').value = toon.rating ?? '';
+      document.getElementById('status').value = toon.status;
+      document.getElementById('removeImage').checked = false;
+      document.getElementById('imageDeleteGroup').classList.toggle(
+        'visible',
+        Boolean(toon.image && toon.image !== DEFAULT_IMAGE_URL)
+      );
+
+      document.getElementById('modalOverlay').classList.add('active');
+    };
+
+    window.openModal = function() {
+      if (!currentUser) {
+        alert('로그인이 필요합니다.');
+        return;
+      }
+
+      document.getElementById('webtoonForm').reset();
+      document.getElementById('toonId').value = '';
+      document.getElementById('imageFile').value = '';
+      document.getElementById('removeImage').checked = false;
+      document.getElementById('imageDeleteGroup').classList.remove('visible');
+      document.getElementById('modalTitle').textContent = '새 웹툰 기록하기';
+      document.getElementById('modalOverlay').classList.add('active');
+    };
+
+    window.closeModal = function() {
+      document.getElementById('modalOverlay').classList.remove('active');
+    };
+
+    document.getElementById('modalOverlay').addEventListener('click', function(e) {
+      if (e.target === this) window.closeModal();
+    });
+
+    window.exportToTXT = function() {
+      if (webtoons.length === 0) {
+        alert("내보낼 웹툰 기록이 없습니다.");
+        return;
+      }
+
+      let content = "마이 웹툰 라이브러리 목록\n==============================\n\n";
+
+      webtoons.forEach(toon => {
+        const statusText =
+          toon.status === 'reading' ? '감상 중' :
+          toon.status === 'completed' ? '완독' : '보류';
+
+        let epText = '';
+        if (toon.episode !== null && toon.episodeSide !== null) {
+          epText = `본편 ${toon.episode}화, 외전 ${toon.episodeSide}화 감상`;
+        } else if (toon.episode !== null) {
+          epText = `본편 ${toon.episode}화 감상`;
+        } else if (toon.episodeSide !== null) {
+          epText = `외전 ${toon.episodeSide}화 감상`;
+        } else {
+          epText = '화수 미기록';
+        }
+
+        const rateText = toon.rating !== null ? `별점: ${toon.rating}점` : '별점 미기록';
+        content += `- [${statusText}] ${toon.title} (${epText} / ${rateText})\n`;
+      });
+
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'my_webtoon_list.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    };
+
+    async function loadPlatforms() {
+      if (!currentUser) return;
+
+      try {
+        const docRef = doc(db, "settings", "platforms");
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const links = docSnap.data()?.links;
+          platformLinks = Array.isArray(links)
+            ? links
+                .filter(p => p && typeof p.name === 'string' && typeof p.url === 'string')
+                .map(p => ({ name: p.name, url: p.url }))
+            : [];
+        } else {
+          platformLinks = [
+            { name: '네이버 웹툰', url: 'https://comic.naver.com/' },
+            { name: '카카오페이지', url: 'https://page.kakao.com/' },
+            { name: '리디북스', url: 'https://ridibooks.com/' }
+          ];
+        }
+
+        window.renderSidebar();
+      } catch (error) {
+        console.error("플랫폼 로드 에러:", error);
+        throw error;
+      }
+    }
+
+    window.toggleSidebar = function() {
+      if (!currentUser) {
+        alert('로그인이 필요합니다.');
+        return;
+      }
+
+      document.getElementById('sidebar').classList.toggle('active');
+      document.getElementById('sidebarOverlay').classList.toggle('active');
+
+      if (!document.getElementById('sidebar').classList.contains('active')) {
+        isSidebarEditMode = false;
+      }
+
+      window.renderSidebar();
+    };
+
+    window.closeSidebar = function() {
+      document.getElementById('sidebar').classList.remove('active');
+      document.getElementById('sidebarOverlay').classList.remove('active');
+      isSidebarEditMode = false;
+    };
+
+    window.toggleSidebarEdit = async function() {
+      if (!currentUser) return;
+
+      if (!isSidebarEditMode) {
+        isSidebarEditMode = true;
+        window.renderSidebar();
+        return;
+      }
+
+      const items = document.querySelectorAll('.platform-edit-item');
+      const nextLinks = [];
+
+      for (const item of items) {
+        const name = item.querySelector('.plat-name').value.trim();
+        const url = item.querySelector('.plat-url').value.trim();
+
+        if (!name && !url) continue;
+        if (!name || !url) {
+          alert('플랫폼 이름과 URL을 모두 입력해 주세요.');
+          return;
+        }
+        if (!isHttpUrl(url)) {
+          alert(`"${name}"의 URL은 http:// 또는 https:// 주소로 입력해 주세요.`);
+          return;
+        }
+
+        nextLinks.push({ name, url });
+      }
+
+      const editBtn = document.getElementById('sidebarEditBtn');
+      editBtn.disabled = true;
+      editBtn.textContent = '저장 중...';
+
+      try {
+        await setDoc(doc(db, "settings", "platforms"), { links: nextLinks });
+        platformLinks = nextLinks;
+        isSidebarEditMode = false;
+        window.renderSidebar();
+      } catch (error) {
+        console.error("플랫폼 저장 에러:", error);
+        alert("플랫폼 목록 저장에 실패했습니다. 입력 내용은 유지됩니다.");
+        editBtn.disabled = false;
+        editBtn.textContent = '저장';
+      }
+    };
+
+    window.addPlatformField = function() {
+      const items = document.querySelectorAll('.platform-edit-item');
+      const nextLinks = [];
+
+      items.forEach(item => {
+        nextLinks.push({
+          name: item.querySelector('.plat-name').value,
+          url: item.querySelector('.plat-url').value
+        });
+      });
+
+      nextLinks.push({ name: '', url: '' });
+      platformLinks = nextLinks;
+      window.renderSidebar();
+    };
+
+    window.removePlatformField = function(index) {
+      const items = document.querySelectorAll('.platform-edit-item');
+      const nextLinks = [];
+
+      items.forEach(item => {
+        nextLinks.push({
+          name: item.querySelector('.plat-name').value,
+          url: item.querySelector('.plat-url').value
+        });
+      });
+
+      nextLinks.splice(index, 1);
+      platformLinks = nextLinks;
+      window.renderSidebar();
+    };
+
+    window.renderSidebar = function() {
+      const content = document.getElementById('sidebarContent');
+      const editBtn = document.getElementById('sidebarEditBtn');
+      content.replaceChildren();
+
+      if (isSidebarEditMode) {
+        editBtn.textContent = '저장';
+        editBtn.style.color = 'var(--accent)';
+        editBtn.style.fontWeight = 'bold';
+        editBtn.disabled = false;
+
+        platformLinks.forEach((p, idx) => {
+          const item = document.createElement('div');
+          item.className = 'platform-edit-item';
+
+          const nameInput = document.createElement('input');
+          nameInput.type = 'text';
+          nameInput.className = 'plat-name';
+          nameInput.value = typeof p.name === 'string' ? p.name : '';
+          nameInput.placeholder = '플랫폼 이름 (예: 네이버 웹툰)';
+
+          const urlInput = document.createElement('input');
+          urlInput.type = 'url';
+          urlInput.className = 'plat-url';
+          urlInput.value = typeof p.url === 'string' ? p.url : '';
+          urlInput.placeholder = 'URL 주소 (https://...)';
+
+          const removeButton = document.createElement('button');
+          removeButton.type = 'button';
+          removeButton.className = 'btn-platform-remove';
+          removeButton.textContent = '삭제';
+          removeButton.addEventListener('click', () => window.removePlatformField(idx));
+
+          item.append(nameInput, urlInput, removeButton);
+          content.appendChild(item);
+        });
+
+        const addButton = document.createElement('button');
+        addButton.type = 'button';
+        addButton.className = 'btn-platform-add';
+        addButton.textContent = '+ 링크 추가';
+        addButton.addEventListener('click', window.addPlatformField);
+        content.appendChild(addButton);
+      } else {
+        editBtn.textContent = '편집';
+        editBtn.style.color = 'var(--text-muted)';
+        editBtn.style.fontWeight = 'normal';
+        editBtn.disabled = false;
+
+        const validLinks = platformLinks.filter(
+          p => p && typeof p.name === 'string' && p.name.trim() && isHttpUrl(p.url)
+        );
+
+        if (validLinks.length === 0) {
+          const empty = document.createElement('p');
+          empty.style.color = 'var(--text-muted)';
+          empty.style.fontSize = '0.95rem';
+          empty.style.textAlign = 'center';
+          empty.style.marginTop = '20px';
+          empty.append('등록된 플랫폼이 없습니다.');
+          empty.appendChild(document.createElement('br'));
+          empty.append('우측 상단의 편집을 눌러 추가해 보세요.');
+          content.appendChild(empty);
+          return;
+        }
+
+        validLinks.forEach(p => {
+          const link = document.createElement('a');
+          link.href = p.url;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.className = 'platform-link';
+          link.textContent = p.name;
+          content.appendChild(link);
+        });
+      }
+    };
+
+    window.renderWebtoons();
+    window.renderSidebar();
+  </script>
+</body>
+</html>
